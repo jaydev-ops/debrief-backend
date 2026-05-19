@@ -1,0 +1,122 @@
+// prisma/schema.prisma
+//
+// This file is the "blueprint" for your database.
+// Prisma reads this and creates the actual SQLite tables.
+//
+// Think of each `model` as a table in your database.
+// Each field inside the model is a column in that table.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"         // We use SQLite — a simple file-based database
+  url      = env("DATABASE_URL") // Reads the path from your .env file
+}
+
+// ─── USER ─────────────────────────────────────────────────────────────────────
+// Stores people who log in to the app.
+
+model User {
+  id        Int      @id @default(autoincrement()) // Auto-incrementing number ID
+  name      String
+  email     String   @unique                        // No two users can share an email
+  password  String                                  // Will be stored as a bcrypt hash (never plain text)
+  createdAt DateTime @default(now())
+
+  // Relations: a user can have many meetings and many chat messages
+  meetings     Meeting[]
+  chatMessages ChatMessage[]
+  rooms        RoomMember[]
+  createdRooms Room[]
+  notes        Note[]
+}
+
+// ─── MEETING ──────────────────────────────────────────────────────────────────
+// A "meeting" is the container. Notes and chat messages belong to a meeting.
+
+model Meeting {
+  id        Int      @id @default(autoincrement())
+  title     String
+  date      DateTime @default(now())
+  createdAt DateTime @default(now())
+
+  // Who created this meeting?
+  createdById Int?
+  createdBy   User? @relation(fields: [createdById], references: [id], onDelete: SetNull)
+
+  // A meeting has many notes and many chat messages
+  notes        Note[]
+  chatMessages ChatMessage[]
+}
+
+// ─── NOTE ─────────────────────────────────────────────────────────────────────
+// A single note taken during a meeting.
+// Notes are automatically classified by the backend.
+
+model Note {
+  id        Int      @id @default(autoincrement())
+  content   String                                  // The raw text the user typed
+  title     String?                                 // Auto-generated or user-provided title
+  type      String   @default("discussion")         // "decision" | "action" | "problem" | "discussion"
+  createdAt DateTime @default(now())
+
+  // Which meeting does this note belong to?
+  meetingId Int?
+  meeting   Meeting? @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+
+  roomId   Int?           // null = private note, set = room note
+  room     Room?   @relation(fields: [roomId], references: [id])
+
+  // Optionally — who created this note?
+  authorId Int?
+  author   User?   @relation(fields: [authorId], references: [id], onDelete: SetNull)
+}
+
+// ─── CHATMESSAGE ──────────────────────────────────────────────────────────────
+// A single chat message sent inside a meeting's group chat.
+
+model ChatMessage {
+  id        Int      @id @default(autoincrement())
+  text      String
+  createdAt DateTime @default(now())
+
+  // Which meeting's chat?
+  meetingId Int
+  meeting   Meeting @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+
+  // Who sent it?
+  senderId Int?
+  sender   User? @relation(fields: [senderId], references: [id], onDelete: SetNull)
+
+  roomId   Int?
+  room     Room?   @relation(fields: [roomId], references: [id])
+}
+
+// ─── ROOM ─────────────────────────────────────────────────────────────────────
+
+model Room {
+  id           Int           @id @default(autoincrement())
+  name         String
+  description  String?
+  inviteCode   String        @unique
+  createdAt    DateTime      @default(now())
+  createdById  Int?
+  createdBy    User?         @relation(fields: [createdById], references: [id], onDelete: SetNull)
+  members      RoomMember[]
+  notes        Note[]
+  chatMessages ChatMessage[]
+}
+
+model RoomMember {
+  id        Int      @id @default(autoincrement())
+  role      String   @default("member") // "admin" | "member"
+  joinedAt  DateTime @default(now())
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id])
+  roomId    Int
+  room      Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, roomId])
+}

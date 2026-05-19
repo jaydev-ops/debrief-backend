@@ -1,0 +1,16 @@
+# Dependencies
+node_modules/
+
+# Environment secrets — NEVER commit this
+.env
+
+# SQLite database files (regeneratable via migrations)
+*.db
+*.db-journal
+
+# Prisma generated client (regeneratable via prisma generate)
+node_modules/.prisma/
+
+# Logs
+*.log
+npm-debug.log*
