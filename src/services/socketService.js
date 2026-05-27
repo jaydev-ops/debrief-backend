@@ -5,9 +5,24 @@ const prisma = require('../prisma');
 let io;
 
 function initSocket(server) {
+  const allowedOrigins = [
+    'http://localhost:5173',
+    'https://debrief-saas.vercel.app'
+  ];
+
   io = new Server(server, {
     cors: {
-      origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+      origin: (origin, callback) => {
+        if (!origin) return callback(null, true);
+        const isAllowed = allowedOrigins.includes(origin) || 
+                          origin.endsWith('.vercel.app') || 
+                          origin === process.env.FRONTEND_URL;
+        if (isAllowed) {
+          callback(null, true);
+        } else {
+          callback(new Error('Not allowed by CORS'));
+        }
+      },
       credentials: true
     }
   });
