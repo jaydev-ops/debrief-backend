@@ -11,8 +11,8 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"         // We use SQLite — a simple file-based database
-  url      = env("DATABASE_URL") // Reads the path from your .env file
+  provider = "postgresql"         // We use PostgreSQL for production
+  url      = env("DATABASE_URL")  // Reads the connection string from Railway env
 }
 
 // ─── USER ─────────────────────────────────────────────────────────────────────
