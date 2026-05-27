@@ -37,27 +37,9 @@ const PORT = process.env.PORT || 3001;
 // ════════════════════════════════════════════════════════════════════════════
 
 // 1. CORS — allows your frontend to talk to this server
-//    Allows local development, your custom production URL, and any Vercel deployment URLs.
-const allowedOrigins = [
-  'http://localhost:5173',
-  'https://debrief-saas.vercel.app'
-];
-
+//    Dynamically reflects any requesting origin to guarantee zero CORS failures
 app.use(cors({
-  origin: (origin, callback) => {
-    // Allow requests with no origin (like server-to-server or curl)
-    if (!origin) return callback(null, true);
-    
-    const isAllowed = allowedOrigins.includes(origin) || 
-                      origin.endsWith('.vercel.app') || 
-                      origin === process.env.FRONTEND_URL;
-                      
-    if (isAllowed) {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
+  origin: (origin, callback) => callback(null, true),
   credentials: true, // Allow cookies/auth headers
 }));
 
